@@ -25,7 +25,7 @@ namespace DotNetAstGen
                             .AddConsole()
                             .AddDebug();
 
-                        if (options.Verbose)
+                        if (options.Debug)
                         {
                             builder.SetMinimumLevel(LogLevel.Debug);
                         }
@@ -104,8 +104,8 @@ namespace DotNetAstGen
 
     internal class Options
     {
-        [Option('v', "verbose", Required = false, HelpText = "Enable verbose output.")]
-        public bool Verbose { get; set; } = false;
+        [Option('d', "debug", Required = false, HelpText = "Enable verbose output.")]
+        public bool Debug { get; set; } = false;
 
         [Option('i', "input", Required = true, HelpText = "Input file or directory.")]
         public string InputFilePath { get; set; } = "";
