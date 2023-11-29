@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Text;
 using CommandLine;
-using DotNetAstGen.Utils;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -85,7 +84,7 @@ namespace DotNetAstGen
                 {
                     ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
                     ContractResolver =
-                        new IgnorePropertiesResolver() // Comment this to see the unfiltered parser output
+                        new SyntaxNodePropertiesResolver() // Comment this to see the unfiltered parser output
                 });
                 var outputName = Path.Combine(filePath.DirectoryName ?? "./",
                         $"{Path.GetFileNameWithoutExtension(fullPath)}.json")
