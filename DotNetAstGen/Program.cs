@@ -182,14 +182,15 @@ namespace DotNetAstGen
             var classInfoList = new List<ClassInfo>();
 
             using var x = AssemblyDefinition.ReadAssembly(dllPath, p);
+            Regex typeFilter = new Regex("^(<PrivateImplementationDetails>|<Module>|.*AnonymousType).*", RegexOptions.IgnoreCase);
+            Regex methodFilter = new Regex("^.*\\.(ctor|cctor)", RegexOptions.IgnoreCase);
 
-            foreach (var typ in x.MainModule.GetAllTypes().DistinctBy(t => t.FullName).Where(t => t.Name != null))
+            foreach (var typ in x.MainModule.GetAllTypes().DistinctBy(t => t.FullName).Where(t => t.Name != null).Where(t => !typeFilter.IsMatch(t.FullName)))
             {
                 var classInfo = new ClassInfo();
                 var methodInfoList = new List<MethodInfo>();
-                Regex filter = new Regex("^.*(\\.(ctor|cctor))", RegexOptions.IgnoreCase);
 
-                foreach (var method in typ.Methods.Where(m => !filter.IsMatch(m.Name)).Where( m => m.IsPublic))
+                foreach (var method in typ.Methods.Where(m => !methodFilter.IsMatch(m.Name)).Where( m => m.IsPublic))
                 {
                     var methodInfo = new MethodInfo();
                     var parameterTypesList = new List<List<string>>();
