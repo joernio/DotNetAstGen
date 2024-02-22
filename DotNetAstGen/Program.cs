@@ -193,19 +193,19 @@ namespace DotNetAstGen
                 {
                     var methodInfo = new MethodInfo();
                     var parameterTypesList = new List<List<string>>();
-                    methodInfo.name = method.Name.Split("`")[0];
+                    methodInfo.name = method.Name;
                     methodInfo.returnType = method.ReturnType.ToString();
                     methodInfo.isStatic = method.IsStatic;
                     foreach (var param in method.Parameters)
                     {
                         parameterTypesList.Add([param.Name, param.ParameterType.FullName]);
-                        methodInfo.parameterTypes = parameterTypesList;
                     }
+                    methodInfo.parameterTypes = parameterTypesList;
                     methodInfoList.Add(methodInfo);
-                    classInfo.methods = methodInfoList;
-                    classInfo.fields = [];
                 }
 
+                classInfo.methods = methodInfoList;
+                classInfo.fields = [];
                 classInfo.name = typ.FullName;
                 classInfoList.Add(classInfo);
             }
