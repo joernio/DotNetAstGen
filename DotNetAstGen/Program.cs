@@ -192,20 +192,20 @@ namespace DotNetAstGen
             {
                 var classInfo = new ClassInfo();
                 var methodInfoList = new List<MethodInfo>();
-                var parameterTypesList = new List<string>();
+                var parameterTypesList = new List<List<string>>();
 
                 Regex filter = new Regex("^.*(\\.(ctor|cctor))", RegexOptions.IgnoreCase);
 
-                foreach (var method in typ.Methods.Where(m => !filter.IsMatch(m.Name)))
+                foreach (var method in typ.Methods.Where(m => !filter.IsMatch(m.Name)).Where( m => m.IsPublic))
                 {
                     var methodInfo = new MethodInfo();
                     methodInfo.name = method.Name.Split("`")[0];
                     methodInfo.returnType = method.ReturnType.ToString();
-                    methodInfo.isStatic = true;
+                    methodInfo.isStatic = method.IsStatic;
                     foreach (var param in method.Parameters)
                     {
-                        parameterTypesList.Add(param.ParameterType.ToString());
-                        methodInfo.parameterTypes = [parameterTypesList.Distinct().ToList()];
+                        parameterTypesList.Add([param.Name.ToString(), param.ParameterType.ToString()]);
+                        methodInfo.parameterTypes = parameterTypesList;
                     }
                     methodInfoList.Add(methodInfo);
                     classInfo.methods = methodInfoList;
