@@ -6,9 +6,31 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Mono.Cecil;
+using Mono.Cecil.Rocks;
 
 namespace DotNetAstGen
 {
+    public class MethodInfo
+    {
+        public string? name { get; set; }
+        public string? returnType { get; set; }
+        public List<List<string>>? parameterTypes { get; set; }
+        public bool isStatic { get; set; }
+    }
+
+    public class ClassInfo
+    {
+        public string? name { get; set; }
+        public List<MethodInfo>? methods { get; set; }
+        public List<object>? fields { get; set; }
+    }
+
+    public class NamespaceInfo
+    {
+        public Dictionary<string, List<ClassInfo>>? namespaces { get; set; }
+    }
+
     internal class Program
     {
         public static ILoggerFactory? LoggerFactory;
@@ -39,10 +61,17 @@ namespace DotNetAstGen
                     _logger = LoggerFactory.CreateLogger<Program>();
                     _logger.LogDebug("Show verbose output.");
 
-                    _RunAstGet(
-                        options.InputFilePath,
-                        new DirectoryInfo(options.OutputDirectory),
-                        options.ExclusionRegex);
+                    if (options.InputFilePath != "") {
+                        _RunAstGet(
+                            options.InputFilePath,
+                            new DirectoryInfo(options.OutputDirectory),
+                            options.ExclusionRegex);
+                    }
+
+                    if (options.InputDLLFilePath != "") {
+                        ProcessDll(options.InputDLLFilePath, options.OutputBuiltInJsonPath);
+                    }
+
                 });
         }
 
@@ -149,6 +178,58 @@ namespace DotNetAstGen
                 _logger?.LogError("Error encountered while parsing '{filePath}': {errorMsg}", fullPath, e.Message);
             }
         }
+
+        static void ProcessDll(string dllPath, string jsonPath)
+        {
+            var p = new ReaderParameters();
+            p.ReadSymbols = true;
+
+            var classInfoList = new List<ClassInfo>();
+
+            using var x = AssemblyDefinition.ReadAssembly(dllPath, p);
+
+            foreach (var typ in x.MainModule.GetAllTypes().DistinctBy(t => t.FullName).Where(t => t.Name != null))
+            {
+                var classInfo = new ClassInfo();
+                var methodInfoList = new List<MethodInfo>();
+                var parameterTypesList = new List<string>();
+
+                Regex filter = new Regex("^.*(\\.(ctor|cctor))", RegexOptions.IgnoreCase);
+
+                foreach (var method in typ.Methods.Where(m => !filter.IsMatch(m.Name)))
+                {
+                    var methodInfo = new MethodInfo();
+                    methodInfo.name = method.Name.Split("`")[0];
+                    methodInfo.returnType = method.ReturnType.ToString();
+                    methodInfo.isStatic = true;
+                    foreach (var param in method.Parameters)
+                    {
+                        parameterTypesList.Add(param.ParameterType.ToString());
+                        methodInfo.parameterTypes = [parameterTypesList.Distinct().ToList()];
+                    }
+                    methodInfoList.Add(methodInfo);
+                    classInfo.methods = methodInfoList;
+                    classInfo.fields = [];
+                }
+
+                classInfo.name = typ.FullName;
+                classInfoList.Add(classInfo);
+            }
+
+            var namespaceStructure = new Dictionary<string, List<ClassInfo>>();
+            foreach (var c in classInfoList)
+            {
+                var parentNamespace = string.Join(".", c.name.Split('.').Reverse().Skip(1).Reverse());
+
+                if (!namespaceStructure.ContainsKey(parentNamespace))
+                    namespaceStructure[parentNamespace] = new List<ClassInfo>();
+
+                namespaceStructure[parentNamespace].Add(c);
+            }
+
+            var jsonString = JsonConvert.SerializeObject(namespaceStructure, Formatting.Indented);
+            File.WriteAllText(jsonPath, jsonString);
+        }
     }
 
 
@@ -157,13 +238,19 @@ namespace DotNetAstGen
         [Option('d', "debug", Required = false, HelpText = "Enable verbose output.")]
         public bool Debug { get; set; } = false;
 
-        [Option('i', "input", Required = true, HelpText = "Input file or directory.")]
+        [Option('i', "input", Required = false, HelpText = "Input file or directory.")]
         public string InputFilePath { get; set; } = "";
 
-        [Option('o', "input", Required = false, HelpText = "Output directory. (default `./.ast`)")]
+        [Option('o', "output", Required = false, HelpText = "Output directory. (default `./.ast`)")]
         public string OutputDirectory { get; set; } = ".ast";
 
         [Option('e', "exclude", Required = false, HelpText = "Exclusion regex for while files to filter out.")]
         public string? ExclusionRegex { get; set; } = null;
+
+        [Option('l', "dll", Required = false, HelpText = "Input DLL file. Ensure a .pdb file is present of same name alongside DLL.")]
+        public string InputDLLFilePath { get; set; } = "";
+
+        [Option('b', "builtin", Required = false, HelpText = "The output JSON file. (default `./builtin_types.json`)")]
+        public string OutputBuiltInJsonPath { get; set; } = "./builtin_types.json";
     }
 }
