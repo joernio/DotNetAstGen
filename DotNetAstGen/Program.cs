@@ -26,11 +26,6 @@ namespace DotNetAstGen
         public List<object>? fields { get; set; }
     }
 
-    public class NamespaceInfo
-    {
-        public Dictionary<string, List<ClassInfo>>? namespaces { get; set; }
-    }
-
     internal class Program
     {
         public static ILoggerFactory? LoggerFactory;
@@ -192,19 +187,18 @@ namespace DotNetAstGen
             {
                 var classInfo = new ClassInfo();
                 var methodInfoList = new List<MethodInfo>();
-                var parameterTypesList = new List<List<string>>();
-
                 Regex filter = new Regex("^.*(\\.(ctor|cctor))", RegexOptions.IgnoreCase);
 
                 foreach (var method in typ.Methods.Where(m => !filter.IsMatch(m.Name)).Where( m => m.IsPublic))
                 {
                     var methodInfo = new MethodInfo();
+                    var parameterTypesList = new List<List<string>>();
                     methodInfo.name = method.Name.Split("`")[0];
                     methodInfo.returnType = method.ReturnType.ToString();
                     methodInfo.isStatic = method.IsStatic;
                     foreach (var param in method.Parameters)
                     {
-                        parameterTypesList.Add([param.Name.ToString(), param.ParameterType.ToString()]);
+                        parameterTypesList.Add([param.Name, param.ParameterType.FullName]);
                         methodInfo.parameterTypes = parameterTypesList;
                     }
                     methodInfoList.Add(methodInfo);
