@@ -64,7 +64,14 @@ namespace DotNetAstGen
                     }
 
                     if (options.InputDLLFilePath != "") {
-                        ProcessDll(options.InputDLLFilePath, options.OutputBuiltInJsonPath);
+                        var dllName = Path.GetFileNameWithoutExtension(options.InputDLLFilePath);
+                        int lastDotIndex = dllName.LastIndexOf('.');
+                        var jsonName = lastDotIndex >= 0 ? Path.GetDirectoryName(options.InputDLLFilePath) + "\\" + dllName.Substring(lastDotIndex + 1) + ".json" : Path.GetDirectoryName(options.InputDLLFilePath) + "\\" + dllName + ".json";
+                        if (options.OutputBuiltInJsonPath != "") 
+                        {
+                            jsonName = options.OutputBuiltInJsonPath;
+                        }
+                        ProcessDll(options.InputDLLFilePath, jsonName);
                     }
 
                 });
@@ -246,6 +253,6 @@ namespace DotNetAstGen
         public string InputDLLFilePath { get; set; } = "";
 
         [Option('b', "builtin", Required = false, HelpText = "The output JSON file. (default `./builtin_types.json`)")]
-        public string OutputBuiltInJsonPath { get; set; } = "./builtin_types.json";
+        public string OutputBuiltInJsonPath { get; set; } = "";
     }
 }
