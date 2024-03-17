@@ -46,7 +46,7 @@ namespace DotNetAstGen
                 PEStreamOptions.PrefetchEntireImage,
                 metadataOptions: MetadataReaderOptions.None);
 
-            if (!PortablePdbWriter.HasCodeViewDebugDirectoryEntry(module))
+            if (!PDBWriter.HasCodeViewDebugDirectoryEntry(module))
             {
                 _logger?.LogWarning($"Cannot create PDB file for {dllFileName}, because it does not contain a PE Debug Directory Entry of type 'CodeView'. Skipping...");
             }
@@ -54,7 +54,7 @@ namespace DotNetAstGen
             using (FileStream stream = new FileStream(pdbFileName, FileMode.OpenOrCreate, FileAccess.Write))
             {
                 var decompiler = GetDecompiler(dllFileName);
-                PortablePdbWriter.WritePdb(module, decompiler, GetSettings(module), stream);
+                PDBWriter.WritePdb(module, decompiler, GetSettings(module), stream);
             }
         }
     }
