@@ -50,11 +50,13 @@ namespace DotNetAstGen
             {
                 _logger?.LogWarning($"Cannot create PDB file for {dllFileName}, because it does not contain a PE Debug Directory Entry of type 'CodeView'. Skipping...");
             }
-
-            using (FileStream stream = new FileStream(pdbFileName, FileMode.OpenOrCreate, FileAccess.Write))
+            else
             {
-                var decompiler = GetDecompiler(dllFileName);
-                PDBWriter.WritePdb(module, decompiler, GetSettings(module), stream);
+                using (FileStream stream = new FileStream(pdbFileName, FileMode.OpenOrCreate, FileAccess.Write))
+                {
+                    var decompiler = GetDecompiler(dllFileName);
+                    PDBWriter.WritePdb(module, decompiler, GetSettings(module), stream);
+                }
             }
         }
     }
