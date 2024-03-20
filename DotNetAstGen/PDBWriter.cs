@@ -2,7 +2,7 @@
 // 
 // This is created to allow PDB generation functionality via a self-contained DotNetAstGen binary. Original PDB 
 // generation tool ilspycmd from which this is built required presence of dependent DLLs and was installed as a 
-// dotnet tool. This brings core PDB generation. Derived from ILSpy Code at following locations: 
+// dotnet tool. Derived from ILSpy Code at following locations: 
 //   -- https://github.com/icsharpcode/ILSpy/blob/release/8.1/ICSharpCode.Decompiler/DebugInfo/DebugInfoGenerator.cs
 //   -- https://github.com/icsharpcode/ILSpy/blob/release/8.1/ICSharpCode.Decompiler/DebugInfo/PortablePdbWriter.cs
 //
@@ -255,7 +255,7 @@ namespace DotNetAstGen
             // we don't really need variables, but need to add empty set
             var localVariables = new HashSet<ILVariable>(ILVariableKeyComparer);
 
-            LocalScopes.Add(((MethodDefinitionHandle)method.MetadataToken, currentImportScope,
+            LocalScopes.Add(((MethodDefinitionHandle)method!.MetadataToken, currentImportScope,
                 0, methodBody.GetCodeSize(), localVariables));
         }
     }
@@ -321,7 +321,7 @@ namespace DotNetAstGen
         {
             MetadataBuilder metadata = new MetadataBuilder();
             MetadataReader reader = file.Metadata;
-            var entrypointHandle = MetadataTokens.MethodDefinitionHandle(file.Reader.PEHeaders.CorHeader.EntryPointTokenOrRelativeVirtualAddress);
+            var entrypointHandle = MetadataTokens.MethodDefinitionHandle(file!.Reader.PEHeaders.CorHeader.EntryPointTokenOrRelativeVirtualAddress);
 
             var sequencePointBlobs = new Dictionary<MethodDefinitionHandle, (DocumentHandle Document, BlobHandle SequencePoints)>();
             var emptyList = new List<ICSharpCode.Decompiler.DebugInfo.SequencePoint>();
@@ -368,6 +368,10 @@ namespace DotNetAstGen
 
                 // Generate sequence points for the syntax tree
                 var sequencePoints = decompiler.CreateSequencePoints(syntaxTree);
+                if (sequencePoints == null)
+                {
+                    continue;
+                }
 
                 // Generate other debug information
                 var debugInfoGen = new DebugInfoGenerator(decompiler.TypeSystem);
@@ -396,14 +400,14 @@ namespace DotNetAstGen
                     foreach (var function in debugInfoGen.Functions)
                     {
                         var method = function.MoveNextMethod ?? function.Method;
-                        var methodHandle = (MethodDefinitionHandle)method.MetadataToken;
+                        var methodHandle = (MethodDefinitionHandle)method!.MetadataToken;
                         sequencePoints.TryGetValue(function, out var points);
                         ProcessMethod(methodHandle, document, points, syntaxTree);
                         if (function.MoveNextMethod != null)
                         {
                             stateMachineMethods.Add((
                                 (MethodDefinitionHandle)function.MoveNextMethod.MetadataToken,
-                                (MethodDefinitionHandle)function.Method.MetadataToken
+                                (MethodDefinitionHandle)function.Method!.MetadataToken
                             ));
                             customDebugInfo.Add((
                                 function.MoveNextMethod.MetadataToken,
@@ -455,7 +459,7 @@ namespace DotNetAstGen
                 foreach (var local in localScope.Locals.OrderBy(l => l.Index))
                 {
                     var localVarName = local.Name != null ? metadata.GetOrAddString(local.Name) : default;
-                    metadata.AddLocalVariable(LocalVariableAttributes.None, local.Index.Value, localVarName);
+                    metadata.AddLocalVariable(LocalVariableAttributes.None, local.Index!.Value, localVarName);
                 }
 
                 metadata.AddLocalScope(localScope.Method, localScope.Import.Handle, firstLocalVariable,
@@ -491,7 +495,7 @@ namespace DotNetAstGen
             blobBuilder.WriteContentTo(targetStream);
 
             void ProcessMethod(MethodDefinitionHandle method, DocumentHandle document,
-                List<ICSharpCode.Decompiler.DebugInfo.SequencePoint> sequencePoints, SyntaxTree syntaxTree)
+                List<ICSharpCode.Decompiler.DebugInfo.SequencePoint>? sequencePoints, SyntaxTree syntaxTree)
             {
                 var methodDef = reader.GetMethodDefinition(method);
                 int localSignatureRowId;
@@ -503,7 +507,6 @@ namespace DotNetAstGen
                 }
                 else
                 {
-                    methodBody = null;
                     localSignatureRowId = 0;
                 }
 
