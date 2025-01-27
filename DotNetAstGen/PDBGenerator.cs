@@ -7,10 +7,9 @@ using ICSharpCode.Decompiler.Metadata;
 using ICSharpCode.Decompiler.Solution;
 using ICSharpCode.Decompiler.TypeSystem;
 using ICSharpCode.ILSpyX.PdbProvider;
-
+using Microsoft.Extensions.Logging;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
-using Microsoft.Extensions.Logging;
 
 namespace DotNetAstGen
 {
