@@ -4,4 +4,4 @@ VERSION=${1:-$LATEST_TAG}
 
 echo "Running build with assigned version: $VERSION";
 
-dotnet build -c Release /p:Version=$VERSION /p:AssemblyVersion=$VERSION
+dotnet build ./DotNetAstGen/DotNetAstGen.csproj -c Release /p:Version=$VERSION /p:AssemblyVersion=$VERSION

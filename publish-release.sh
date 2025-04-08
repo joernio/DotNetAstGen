@@ -25,4 +25,4 @@ fi
 OUTPUT_PATH="$RELEASE_DIR/$OUTPUT_TARGET"
 TARGET="$OS-$ARCH"
 
-dotnet publish -c Release -r $TARGET -o $OUTPUT_PATH
+dotnet publish ./DotNetAstGen/DotNetAstGen.csproj -c Release -r $TARGET -o $OUTPUT_PATH
